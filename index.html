@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Management at Home</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Water Management Tips</h1>
+        <ul id="tipsList" class="list-group"></ul>
+        <hr>
+        <h2>Add a Tip</h2>
+        <form id="tipForm">
+            <div class="mb-3">
+                <label for="category" class="form-label">Category</label>
+                <input type="text" class="form-control" id="category" required>
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">Description</label>
+                <textarea class="form-control" id="description" rows="3" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Fetch tips from the server
+        fetch('/tips')
+            .then(response => response.json())
+            .then(tips => {
+                const tipsList = document.getElementById('tipsList');
+                tips.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item');
+                    li.textContent = `${tip.category}: ${tip.description}`;
+                    tipsList.appendChild(li);
+                });
+            });
+
+        // Submit new tip
+        document.getElementById('tipForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const category = document.getElementById('category').value;
+            const description = document.getElementById('description').value;
+            const newTip = { category, description };
+
+            fetch('/tips', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newTip),
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Tip added successfully');
+                    location.reload();
+                } else {
+                    alert('Failed to add tip');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

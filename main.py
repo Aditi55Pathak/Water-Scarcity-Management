@@ -1,47 +1,39 @@
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
+import pymongo
+from datetime import datetime
 
-# Function to scrape water-related data from a URL
-def scrape_water_data(url):
-    response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'html.parser')
-    
-    # Extract relevant data from the webpage
-    data = []
-    for row in soup.find_all('tr'):
-        cells = row.find_all('td')
-        if len(cells) > 0:
-            row_data = [cell.text.strip() for cell in cells]
-            data.append(row_data)
-    
-    return data
+# Connect to MongoDB
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client["water_management"]
+collection = db["water_logs"]
 
-# Example usage: Scrape data from a government website
-water_data_url = "https://www.un.org/"
-raw_data = scrape_water_data(water_data_url)
+def log_water_usage(amount):
+    # Log water usage with timestamp
+    log_entry = {"amount": amount, "timestamp": datetime.now()}
+    collection.insert_one(log_entry)
 
-# Clean and preprocess the data
-df = pd.DataFrame(raw_data, columns=['Region', 'Water Availability', 'Water Consumption', 'Water Scarcity'])
-df = df.dropna()  # Remove rows with missing values
-df['Water Availability'] = df['Water Availability'].astype(float)
-df['Water Consumption'] = df['Water Consumption'].astype(float)
-df['Water Scarcity'] = df['Water Scarcity'].astype(float)
+def get_water_usage():
+    # Get total water usage
+    total_usage = sum([entry["amount"] for entry in collection.find()])
+    return total_usage
 
-# Exploratory data analysis
-print('Data Summary:')
-print(df.describe())
+def main():
+    while True:
+        print("1. Log water usage")
+        print("2. View total water usage")
+        print("3. Exit")
+        choice = input("Enter your choice: ")
 
-print('\nCorrelation Matrix:')
-print(df.corr())
+        if choice == "1":
+            amount = float(input("Enter the amount of water used (in liters): "))
+            log_water_usage(amount)
+            print("Water usage logged successfully.")
+        elif choice == "2":
+            total_usage = get_water_usage()
+            print(f"Total water usage: {total_usage} liters")
+        elif choice == "3":
+            break
+        else:
+            print("Invalid choice. Please try again.")
 
-# Visualize the data
-plt.figure(figsize=(12, 6))
-sns.scatterplot(x='Water Availability', y='Water Consumption', data=df, hue='Water Scarcity')
-plt.xlabel('Water Availability')
-plt.ylabel('Water Consumption')
-plt.title('Water Availability vs. Consumption by Water Scarcity')
-plt.show()
+if __name__ == "__main__":
+    main()
